@@ -40,7 +40,7 @@ Cuando uno de los jugadores llega a la posición 4:
 - Los contadores dejan de incrementarse.
 - Se envía mediante UART un mensaje indicando al ganador.
 
-Ejemplo:
+Aparecerá:
 
 `El ganador es Jugador 1!`
 
@@ -50,7 +50,7 @@ o
 
 El sistema permanece bloqueado después de finalizar la carrera.
 
-Para iniciar una nueva carrera es necesario enviar nuevamente el comando `S` o `s`.
+Para iniciar una nueva carrera es necesario enviar nuevamente el comando `S` o `s`. 
 
 ## Hardware utilizado
 
