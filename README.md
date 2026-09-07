@@ -7,9 +7,9 @@ Carnet: 24037
 
 ## Descripción
 
-En este laboratorio se implementó un juego de carrera para dos jugadores utilizando una tarjeta STM32 NUCLEO-F446RE.
+En este laboratorio se implementó un juego de carrera para dos jugadores utilizando STM32 NUCLEO-F446RE.
 
-Cada jugador cuenta con un botón y cuatro LEDs que representan su avance de la posición 0 a la posición 4.
+Cada jugador cuenta con un botón y cuatro LEDs que representan su avance desde la posición 0 hasta la posición 4.
 
 El juego inicia únicamente cuando se recibe el comando `S` o `s` mediante comunicación UART. Después de recibirlo, se ejecuta una secuencia de semáforo:
 
@@ -38,15 +38,15 @@ Cuando uno de los jugadores llega a la posición 4:
 - Se identifica al ganador.
 - Se bloquean inmediatamente los botones de ambos jugadores.
 - Los contadores dejan de incrementarse.
-- Se envía mediante UART el jugador ganador.
+- Se envía mediante UART un mensaje indicando al ganador.
 
 Ejemplo:
 
-`Jugador 1 gano!`
+`El ganador es Jugador 1!`
 
 o
 
-`Jugador 2 gano!`
+`El ganador es Jugador 2!`
 
 El sistema permanece bloqueado después de finalizar la carrera.
 
