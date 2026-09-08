@@ -1,0 +1,791 @@
+/* USER CODE BEGIN Header */
+
+/**
+  ******************************************************************************
+  * Universidad del Valle de Guatemala
+  * Curso: Electrónica Digital 2
+  * Laboratorio 5
+  *
+  * Nombre: Stephany Mejía
+  * Carnet: 24037
+  *
+  ******************************************************************************
+  * @file           : main.c
+  * @brief          : Main program body
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (c) 2026 STMicroelectronics.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
+  ******************************************************************************
+  */
+
+/* USER CODE END Header */
+/* Includes ------------------------------------------------------------------*/
+#include "main.h"
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+
+/* USER CODE END Includes */
+
+/* Private typedef -----------------------------------------------------------*/
+/* USER CODE BEGIN PTD */
+
+/* USER CODE END PTD */
+
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
+
+/* USER CODE END PD */
+
+/* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN PM */
+
+/* USER CODE END PM */
+
+/* Private variables ---------------------------------------------------------*/
+UART_HandleTypeDef huart2;
+
+/* USER CODE BEGIN PV */
+
+//VARIABLES DECLARADAS
+
+
+// ========================================
+// JUGADOR 1
+// ========================================
+
+// Posición actual del Jugador 1
+volatile uint8_t contadorJugador1 = 0;
+
+// Tiempo de la última pulsación para anti-rebote
+uint32_t tiempoBotonJugador1 = 0;
+
+
+// ========================================
+// JUGADOR 2
+// ========================================
+
+// Posición actual del Jugador 2
+volatile uint8_t contadorJugador2 = 0;
+
+// Tiempo de la última pulsación para anti-rebote
+uint32_t tiempoBotonJugador2 = 0;
+
+
+// ========================================
+// CONTROL DEL JUEGO
+// ========================================
+
+// 0 = jugadores bloqueados
+// 1 = carrera activa
+volatile uint8_t juegoIniciado = 0;
+
+// 0 = semáforo apagado
+// 1 = secuencia del semáforo en proceso
+volatile uint8_t semaforoActivo = 0;
+
+
+// ========================================
+// UART
+// ========================================
+
+// Guarda el carácter recibido
+uint8_t datoUART;
+
+// Se activa al recibir S o s
+volatile uint8_t iniciarSemaforo = 0;
+
+
+// ========================================
+// GANADOR
+// ========================================
+
+// 0 = no hay ganador
+// 1 = ganó Jugador 1
+// 2 = ganó Jugador 2
+volatile uint8_t ganador = 0;
+
+// Indica que falta enviar el mensaje del ganador
+volatile uint8_t enviarGanador = 0;
+
+
+/* USER CODE END PV */
+
+
+
+/* Private function prototypes -----------------------------------------------*/
+void SystemClock_Config(void);
+static void MX_GPIO_Init(void);
+static void MX_USART2_UART_Init(void);
+/* USER CODE BEGIN PFP */
+
+/* USER CODE END PFP */
+
+/* Private user code ---------------------------------------------------------*/
+
+/* USER CODE BEGIN 0 */
+
+// ========================================
+// MOSTRAR CONTADOR JUGADOR 1
+// ========================================
+
+//controla los LEDs del jugador 1.
+void mostrarContador1(uint8_t valor)
+{
+    // Apagar todos los LEDs
+    HAL_GPIO_WritePin(Contador1_LED1_GPIO_Port,
+                      Contador1_LED1_Pin,
+                      GPIO_PIN_RESET);
+
+    HAL_GPIO_WritePin(Contador1_LED2_GPIO_Port,
+                      Contador1_LED2_Pin,
+                      GPIO_PIN_RESET);
+
+    HAL_GPIO_WritePin(Contador1_LED3_GPIO_Port,
+                      Contador1_LED3_Pin,
+                      GPIO_PIN_RESET);
+
+    HAL_GPIO_WritePin(Contador1_LED4_GPIO_Port,
+                      Contador1_LED4_Pin,
+                      GPIO_PIN_RESET);
+
+    // Encender el LED correspondiente
+    switch (valor)
+    {
+        case 0:
+            // Todos apagados
+            break;
+
+        case 1:
+            HAL_GPIO_WritePin(Contador1_LED1_GPIO_Port,
+                              Contador1_LED1_Pin,
+                              GPIO_PIN_SET);
+            break;
+
+        case 2:
+            HAL_GPIO_WritePin(Contador1_LED2_GPIO_Port,
+                              Contador1_LED2_Pin,
+                              GPIO_PIN_SET);
+            break;
+
+        case 3:
+            HAL_GPIO_WritePin(Contador1_LED3_GPIO_Port,
+                              Contador1_LED3_Pin,
+                              GPIO_PIN_SET);
+            break;
+
+        case 4:
+            HAL_GPIO_WritePin(Contador1_LED4_GPIO_Port,
+                              Contador1_LED4_Pin,
+                              GPIO_PIN_SET);
+            break;
+    }
+}
+
+
+// ========================================
+// MOSTRAR CONTADOR JUGADOR 2
+// ========================================
+
+
+//controla los LEDs del jugador 2.
+void mostrarContador2(uint8_t valor)
+{
+    // Apagar todos los LEDs
+    HAL_GPIO_WritePin(Contador2_LED1_GPIO_Port,
+                      Contador2_LED1_Pin,
+                      GPIO_PIN_RESET);
+
+    HAL_GPIO_WritePin(Contador2_LED2_GPIO_Port,
+                      Contador2_LED2_Pin,
+                      GPIO_PIN_RESET);
+
+    HAL_GPIO_WritePin(Contador2_LED3_GPIO_Port,
+                      Contador2_LED3_Pin,
+                      GPIO_PIN_RESET);
+
+    HAL_GPIO_WritePin(Contador2_LED4_GPIO_Port,
+                      Contador2_LED4_Pin,
+                      GPIO_PIN_RESET);
+
+    // Encender el LED correspondiente
+    switch (valor)
+    {
+        case 0:
+            // Todos apagados
+            break;
+
+        case 1:
+            HAL_GPIO_WritePin(Contador2_LED1_GPIO_Port,
+                              Contador2_LED1_Pin,
+                              GPIO_PIN_SET);
+            break;
+
+        case 2:
+            HAL_GPIO_WritePin(Contador2_LED2_GPIO_Port,
+                              Contador2_LED2_Pin,
+                              GPIO_PIN_SET);
+            break;
+
+        case 3:
+            HAL_GPIO_WritePin(Contador2_LED3_GPIO_Port,
+                              Contador2_LED3_Pin,
+                              GPIO_PIN_SET);
+            break;
+
+        case 4:
+            HAL_GPIO_WritePin(Contador2_LED4_GPIO_Port,
+                              Contador2_LED4_Pin,
+                              GPIO_PIN_SET);
+            break;
+    }
+}
+
+
+/* USER CODE END 0 */
+
+/**
+  * @brief  The application entry point.
+  * @retval int
+  */
+int main(void)
+{
+
+  /* USER CODE BEGIN 1 */
+
+  /* USER CODE END 1 */
+
+  /* MCU Configuration--------------------------------------------------------*/
+
+  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+  HAL_Init();
+
+  /* USER CODE BEGIN Init */
+
+  /* USER CODE END Init */
+
+  /* Configure the system clock */
+  SystemClock_Config();
+
+  /* USER CODE BEGIN SysInit */
+
+  /* USER CODE END SysInit */
+
+  /* Initialize all configured peripherals */
+  MX_GPIO_Init();
+  MX_USART2_UART_Init();
+
+
+
+  /* USER CODE BEGIN 2 */
+
+  // Mostrar ambos jugadores inicialmente en 0
+  mostrarContador1(contadorJugador1);
+  mostrarContador2(contadorJugador2);
+
+  // Preparar UART para recibir 1 carácter por interrupción
+  HAL_UART_Receive_IT(&huart2, &datoUART, 1);
+
+
+  /* USER CODE END 2 */
+
+
+
+
+  /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
+  while (1)
+  {
+    /* USER CODE END WHILE */
+
+    /* USER CODE BEGIN 3 */
+
+	  // ========================================
+	  // ENVIAR MENSAJE DEL GANADOR
+	  // ========================================
+
+	  // Revisar si existe un mensaje de ganador pendiente
+	  if (enviarGanador == 1)
+	  {
+
+
+	      // Si ganó el Jugador 1
+	      if (ganador == 1)
+	      {
+	          // Mensaje que se enviará por UART
+	          uint8_t mensaje[] = "El ganador es Jugador 1!\r\n";
+
+	          // Enviar el mensaje a la computadora
+	          HAL_UART_Transmit(&huart2,
+	                            mensaje,
+	                            sizeof(mensaje) - 1,
+	                            HAL_MAX_DELAY);
+	      }
+
+	      // Si ganó el Jugador 2
+	      else if (ganador == 2)
+	      {
+	          // Mensaje que se enviará por UART
+	          uint8_t mensaje[] = "El ganador es Jugador 2!\r\n";
+
+	          // Enviar el mensaje a la computadora
+	          HAL_UART_Transmit(&huart2,
+	                            mensaje,
+	                            sizeof(mensaje) - 1,
+	                            HAL_MAX_DELAY);
+	      }
+
+	      // El mensaje ya fue enviado,
+	      // por lo que se baja la bandera
+	    	      enviarGanador = 0;
+	  }
+
+
+
+	  // ========================================
+	  // INICIAR NUEVA CARRERA
+	  // ========================================
+
+	  // Revisar si se recibió el comando S o s
+	  // y se debe iniciar una nueva carrera
+	  if (iniciarSemaforo == 1)
+	  {
+	      // Bajar la bandera para evitar
+	      // que la secuencia se repita
+	      iniciarSemaforo = 0;
+
+	      // Mantener bloqueados a los jugadores
+	      // mientras se realiza la secuencia
+	      juegoIniciado = 0;
+
+
+	      // ========================================
+	      // REINICIAR LA CARRERA
+	      // ========================================
+
+	      // Reiniciar la posición de ambos jugadores
+	      contadorJugador1 = 0;
+	      contadorJugador2 = 0;
+
+	      // Indicar que todavía no hay ganador
+	      ganador = 0;
+
+	      // Actualizar los LEDs para mostrar
+	      // que ambos jugadores están en posición 0
+	      mostrarContador1(contadorJugador1);
+	      mostrarContador2(contadorJugador2);
+
+
+	      // ========================================
+	      // SEMÁFORO ROJO
+	      // ========================================
+
+	      // Encender LED rojo
+	      HAL_GPIO_WritePin(Semaforo_Rojo_GPIO_Port,
+	                        Semaforo_Rojo_Pin,
+	                        GPIO_PIN_SET);
+
+	      // Mantenerlo encendido durante 1 segundo
+	      HAL_Delay(1000);
+
+	      // Apagar LED rojo
+	      HAL_GPIO_WritePin(Semaforo_Rojo_GPIO_Port,
+	                        Semaforo_Rojo_Pin,
+	                        GPIO_PIN_RESET);
+
+
+	      // ========================================
+	      // SEMÁFORO AMARILLO
+	      // ========================================
+
+	      // Encender LED amarillo
+	      HAL_GPIO_WritePin(Semaforo_Amarillo_GPIO_Port,
+	                        Semaforo_Amarillo_Pin,
+	                        GPIO_PIN_SET);
+
+	      // Mantenerlo encendido durante 1 segundo
+	      HAL_Delay(1000);
+
+	      // Apagar LED amarillo
+	      HAL_GPIO_WritePin(Semaforo_Amarillo_GPIO_Port,
+	                        Semaforo_Amarillo_Pin,
+	                        GPIO_PIN_RESET);
+
+
+	      // ========================================
+	      // SEMÁFORO VERDE
+	      // ========================================
+
+	      // Encender LED verde
+	      HAL_GPIO_WritePin(Semaforo_Verde_GPIO_Port,
+	                        Semaforo_Verde_Pin,
+	                        GPIO_PIN_SET);
+
+	      // Mantenerlo encendido durante 1 segundo
+	      HAL_Delay(1000);
+
+	      // Apagar LED verde
+	      HAL_GPIO_WritePin(Semaforo_Verde_GPIO_Port,
+	                        Semaforo_Verde_Pin,
+	                        GPIO_PIN_RESET);
+
+
+	      // ========================================
+	      // FIN DE LA SECUENCIA
+	      // ========================================
+
+	      // Indicar que el semáforo ya terminó
+	      semaforoActivo = 0;
+
+	      // Habilitar los botones de ambos jugadores
+	      juegoIniciado = 1;
+
+
+	      // ========================================
+	      // MENSAJE DE INICIO
+	      // ========================================
+
+	      // Mensaje que indica que ya pueden comenzar
+	      uint8_t mensajeInicio[] = "Inicia el juego!\r\n";
+
+	      // Enviar el mensaje por UART
+	      HAL_UART_Transmit(&huart2,
+	                        mensajeInicio,
+	                        sizeof(mensajeInicio) - 1,
+	                        HAL_MAX_DELAY);
+	  }
+
+  }
+  /* USER CODE END 3 */
+}
+
+/**
+  * @brief System Clock Configuration
+  * @retval None
+  */
+void SystemClock_Config(void)
+{
+  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+
+  /** Configure the main internal regulator output voltage
+  */
+  __HAL_RCC_PWR_CLK_ENABLE();
+  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE3);
+
+  /** Initializes the RCC Oscillators according to the specified parameters
+  * in the RCC_OscInitTypeDef structure.
+  */
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
+  RCC_OscInitStruct.PLL.PLLM = 16;
+  RCC_OscInitStruct.PLL.PLLN = 336;
+  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV4;
+  RCC_OscInitStruct.PLL.PLLQ = 2;
+  RCC_OscInitStruct.PLL.PLLR = 2;
+  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Initializes the CPU, AHB and APB buses clocks
+  */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+}
+
+/**
+  * @brief USART2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART2_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART2_Init 0 */
+
+  /* USER CODE END USART2_Init 0 */
+
+  /* USER CODE BEGIN USART2_Init 1 */
+
+  /* USER CODE END USART2_Init 1 */
+  huart2.Instance = USART2;
+  huart2.Init.BaudRate = 115200;
+  huart2.Init.WordLength = UART_WORDLENGTH_8B;
+  huart2.Init.StopBits = UART_STOPBITS_1;
+  huart2.Init.Parity = UART_PARITY_NONE;
+  huart2.Init.Mode = UART_MODE_TX_RX;
+  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART2_Init 2 */
+
+  /* USER CODE END USART2_Init 2 */
+
+}
+
+/**
+  * @brief GPIO Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_GPIO_Init(void)
+{
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+  /* USER CODE BEGIN MX_GPIO_Init_1 */
+
+  /* USER CODE END MX_GPIO_Init_1 */
+
+  /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOC_CLK_ENABLE();
+  __HAL_RCC_GPIOH_CLK_ENABLE();
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOC, Contador1_LED4_Pin|Contador1_LED3_Pin|Contador2_LED1_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOA, Contador1_LED1_Pin|LD2_Pin|Contador2_LED4_Pin|Contador2_LED3_Pin
+                          |Semaforo_Rojo_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, Contador1_LED2_Pin|Semaforo_Amarillo_Pin|Semaforo_Verde_Pin|Contador2_LED2_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin : B1_Pin */
+  GPIO_InitStruct.Pin = B1_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : Contador1_LED4_Pin Contador1_LED3_Pin Contador2_LED1_Pin */
+  GPIO_InitStruct.Pin = Contador1_LED4_Pin|Contador1_LED3_Pin|Contador2_LED1_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : Boton_Jugador1_Pin Boton_Jugador2_Pin */
+  GPIO_InitStruct.Pin = Boton_Jugador1_Pin|Boton_Jugador2_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : Contador1_LED1_Pin LD2_Pin Contador2_LED4_Pin Contador2_LED3_Pin
+                           Semaforo_Rojo_Pin */
+  GPIO_InitStruct.Pin = Contador1_LED1_Pin|LD2_Pin|Contador2_LED4_Pin|Contador2_LED3_Pin
+                          |Semaforo_Rojo_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : Contador1_LED2_Pin Semaforo_Amarillo_Pin Semaforo_Verde_Pin Contador2_LED2_Pin */
+  GPIO_InitStruct.Pin = Contador1_LED2_Pin|Semaforo_Amarillo_Pin|Semaforo_Verde_Pin|Contador2_LED2_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI0_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI1_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI1_IRQn);
+
+  /* USER CODE BEGIN MX_GPIO_Init_2 */
+
+  /* USER CODE END MX_GPIO_Init_2 */
+}
+
+/* USER CODE BEGIN 4 */
+
+
+
+// ========================================
+// INTERRUPCIONES DE LOS BOTONES
+// ========================================
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+    // ====================================
+    // JUGADOR 1
+    // ====================================
+
+    if (GPIO_Pin == Boton_Jugador1_Pin)
+    {
+        // Solo permitir avanzar si la carrera está activa
+        if (juegoIniciado == 1)
+        {
+            // Anti-rebote de 200 ms
+            if ((HAL_GetTick() - tiempoBotonJugador1) >= 200)
+            {
+                tiempoBotonJugador1 = HAL_GetTick();
+
+                // Incrementar hasta llegar a 4
+                if (contadorJugador1 < 4)
+                {
+                    contadorJugador1++;
+                }
+
+                // Mostrar posición
+                mostrarContador1(contadorJugador1);
+
+
+                // ====================================
+                // VERIFICAR SI GANÓ JUGADOR 1
+                // ====================================
+
+                if (contadorJugador1 == 4)
+                {
+                    // Guardar ganador
+                    ganador = 1;
+
+                    // Pedir que se envíe el mensaje por UART
+                    enviarGanador = 1;
+
+                    // Bloquear inmediatamente a los dos jugadores
+                    juegoIniciado = 0;
+                }
+            }
+        }
+    }
+
+
+    // ====================================
+    // JUGADOR 2
+    // ====================================
+
+    if (GPIO_Pin == Boton_Jugador2_Pin)
+    {
+        // Solo permitir avanzar si la carrera está activa
+        if (juegoIniciado == 1)
+        {
+            // Anti-rebote independiente de 200 ms
+            if ((HAL_GetTick() - tiempoBotonJugador2) >= 200)
+            {
+                tiempoBotonJugador2 = HAL_GetTick();
+
+                // Incrementar hasta llegar a 4
+                if (contadorJugador2 < 4)
+                {
+                    contadorJugador2++;
+                }
+
+                // Mostrar posición
+                mostrarContador2(contadorJugador2);
+
+
+                // ====================================
+                // VERIFICAR SI GANÓ JUGADOR 2
+                // ====================================
+
+                if (contadorJugador2 == 4)
+                {
+                    // Guardar ganador
+                    ganador = 2;
+
+                    // Pedir que se envíe el mensaje por UART
+                    enviarGanador = 1;
+
+                    // Bloquear inmediatamente a los dos jugadores
+                    juegoIniciado = 0;
+                }
+            }
+        }
+    }
+}
+
+
+// ========================================
+// INTERRUPCIÓN DE RECEPCIÓN UART
+// ========================================
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+    // Verificar que el dato llegó por USART2
+    if (huart->Instance == USART2)
+    {
+        // Si se recibió S o s
+        if (datoUART == 'S' || datoUART == 's')
+        {
+            // Solo permitir una nueva carrera si:
+            // - no hay una carrera activa
+            // - no está corriendo actualmente el semáforo
+            // - ya se envió cualquier mensaje pendiente
+            if ((juegoIniciado == 0) &&
+                (semaforoActivo == 0) &&
+                (enviarGanador == 0))
+            {
+                // Marcar que empieza la secuencia
+                semaforoActivo = 1;
+                iniciarSemaforo = 1;
+            }
+        }
+
+        // Preparar nuevamente UART para recibir
+        // otro carácter
+        HAL_UART_Receive_IT(&huart2, &datoUART, 1);
+    }
+}
+
+
+
+
+
+/* USER CODE END 4 */
+
+/**
+  * @brief  This function is executed in case of error occurrence.
+  * @retval None
+  */
+void Error_Handler(void)
+{
+  /* USER CODE BEGIN Error_Handler_Debug */
+  /* User can add his own implementation to report the HAL error return state */
+  __disable_irq();
+  while (1)
+  {
+  }
+  /* USER CODE END Error_Handler_Debug */
+}
+#ifdef USE_FULL_ASSERT
+/**
+  * @brief  Reports the name of the source file and the source line number
+  *         where the assert_param error has occurred.
+  * @param  file: pointer to the source file name
+  * @param  line: assert_param error line source number
+  * @retval None
+  */
+
+void assert_failed(uint8_t *file, uint32_t line)
+{
+  /* USER CODE BEGIN 6 */
+  /* User can add his own implementation to report the file name and line number,
+     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+  /* USER CODE END 6 */
+}
+#endif /* USE_FULL_ASSERT */
