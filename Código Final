@@ -320,7 +320,7 @@ int main(void)
 	      if (ganador == 1)
 	      {
 	          // Mensaje que se enviará por UART
-	          uint8_t mensaje[] = "Jugador 1 gano!\r\n";
+	          uint8_t mensaje[] = "El ganador es Jugador 1!\r\n";
 
 	          // Enviar el mensaje a la computadora
 	          HAL_UART_Transmit(&huart2,
@@ -333,7 +333,7 @@ int main(void)
 	      else if (ganador == 2)
 	      {
 	          // Mensaje que se enviará por UART
-	          uint8_t mensaje[] = "Jugador 2 gano!\r\n";
+	          uint8_t mensaje[] = "El ganador es Jugador 2!\r\n";
 
 	          // Enviar el mensaje a la computadora
 	          HAL_UART_Transmit(&huart2,
